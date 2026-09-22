@@ -1,0 +1,7 @@
+# Dependencies & Environment
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Test outputs
+*.log

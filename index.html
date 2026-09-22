@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Light Energy Monitor - IoT Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <!-- HEADER -->
+        <header class="dashboard-header">
+            <div class="header-title-group">
+                <div class="brand-badge">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    ESP8266 IoT System
+                </div>
+                <h1 class="main-title">Smart Light Energy Monitor</h1>
+                <p class="sub-title">IoT Based Light Controlling and Energy Measuring System (ESP8266 + Relay + INA219)</p>
+            </div>
+
+            <div class="header-controls">
+                <span id="modeBadge" class="mode-badge demo">DEMO MODE</span>
+
+                <div id="connectionBadge" class="status-badge demo">
+                    <span class="indicator-dot"></span>
+                    <span id="connectionText">DEMO MODE Active</span>
+                </div>
+
+                <button id="modeToggleBtn" class="btn btn-secondary" title="Switch between simulated data and real hardware">
+                    Switch to Real ESP8266
+                </button>
+
+                <div id="lastUpdatedText" class="last-updated">Awaiting telemetry...</div>
+            </div>
+        </header>
+
+        <!-- ERROR / NOTICE BANNER -->
+        <div id="errorBanner" class="alert-banner">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="errorMessage">Unable to communicate with ESP8266.</span>
+        </div>
+
+        <!-- MAIN DASHBOARD GRID -->
+        <main class="dashboard-grid">
+
+            <!-- 1. LIGHT CONTROL -->
+            <section id="lightStatusCard" class="card card-light-control is-on">
+                <div class="light-visual-group">
+                    <div id="lightBulbVisual" class="bulb-icon-wrapper">
+                        <!-- Light Bulb SVG Icon -->
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 18h6"></path>
+                            <path d="M10 22h4"></path>
+                            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path>
+                        </svg>
+                    </div>
+                    <div class="light-text-group">
+                        <span class="label">Relay Actuator (D5)</span>
+                        <h2 id="lightStatusText" class="status-value">LIGHT ON</h2>
+                    </div>
+                </div>
+
+                <div class="control-buttons-group">
+                    <button id="btnTurnOn" class="btn btn-on active">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                            <line x1="12" y1="2" x2="12" y2="12"></line>
+                        </svg>
+                        TURN ON
+                    </button>
+                    <button id="btnTurnOff" class="btn btn-off">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                        </svg>
+                        TURN OFF
+                    </button>
+                </div>
+            </section>
+
+            <!-- 2. VOLTAGE CARD -->
+            <div class="card card-metric card-voltage">
+                <div class="metric-header">
+                    <span class="title">Bus Voltage</span>
+                    <div class="metric-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                    </div>
+                </div>
+                <div class="metric-body">
+                    <span id="voltageVal" class="metric-value">5.02</span>
+                    <span class="metric-unit">V</span>
+                </div>
+                <div class="metric-footer">INA219 I2C Bus Sensor (D2/D1)</div>
+            </div>
+
+            <!-- 3. CURRENT CARD -->
+            <div class="card card-metric card-current">
+                <div class="metric-header">
+                    <span class="title">Load Current</span>
+                    <div class="metric-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="metric-body">
+                    <span id="currentVal" class="metric-value">120.50</span>
+                    <span class="metric-unit">mA</span>
+                </div>
+                <div class="metric-footer">Shunt Resistor Measurement</div>
+            </div>
+
+            <!-- 4. POWER CARD -->
+            <div class="card card-metric card-power">
+                <div class="metric-header">
+                    <span class="title">Instantaneous Power</span>
+                    <div class="metric-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="metric-body">
+                    <span id="powerVal" class="metric-value">0.60</span>
+                    <span class="metric-unit">W</span>
+                </div>
+                <div class="metric-footer">Computed: P = Voltage × Current</div>
+            </div>
+
+            <!-- 5. ENERGY CARD -->
+            <div class="card card-metric card-energy">
+                <div class="metric-header">
+                    <span class="title">Energy Consumed</span>
+                    <div class="metric-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="metric-body">
+                    <span id="energyVal" class="metric-value">0.0245</span>
+                    <span class="metric-unit">Wh</span>
+                </div>
+                <div class="metric-footer">Time Integral Accumulation</div>
+            </div>
+
+            <!-- 6. REAL-TIME POWER CHART -->
+            <section class="card card-chart">
+                <div class="card-header-bar">
+                    <h3 class="card-header-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                        Power Consumption History (Rolling 25 Readings)
+                    </h3>
+                    <div class="chart-legend">
+                        <span class="legend-dot"></span>
+                        <span>Power (Watts) vs Time</span>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="powerChartCanvas"></canvas>
+                </div>
+            </section>
+
+            <!-- 7. QR CODE MOBILE ACCESS -->
+            <section class="card card-qr">
+                <div class="card-header-bar" style="width: 100%; margin-bottom: 0;">
+                    <h3 class="card-header-title" style="font-size: 0.95rem;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        Scan To Access Dashboard
+                    </h3>
+                </div>
+
+                <div class="qr-box">
+                    <canvas id="qrCanvas"></canvas>
+                </div>
+
+                <div id="qrUrlText" class="qr-url-pill">http://192.168.4.1</div>
+
+                <div class="qr-actions">
+                    <button id="btnCopyUrl" class="btn btn-secondary" title="Copy dashboard address to clipboard">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy URL
+                    </button>
+                    <button id="btnDownloadQr" class="btn btn-secondary" title="Download QR image for college viva slides">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download QR
+                    </button>
+                </div>
+            </section>
+
+            <!-- 8. NETWORK & HARDWARE SPECIFICATIONS -->
+            <section class="card card-network">
+                <div class="info-column">
+                    <h4>ESP8266 Network Config</h4>
+                    <div class="info-row">
+                        <span class="label">Wi-Fi Access Point:</span>
+                        <span id="wifiSsidDisplay" class="val">Smart_Light_IoT</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Default Device IP:</span>
+                        <span id="espIpDisplay" class="val">192.168.4.1</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Polling Frequency:</span>
+                        <span class="val">Every 2.0s (/data)</span>
+                    </div>
+                </div>
+
+                <div class="info-column">
+                    <h4>Hardware Pin Connections</h4>
+                    <div class="info-row">
+                        <span class="label">Relay Control:</span>
+                        <span class="val">D5 (GPIO14)</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">INA219 I2C SDA:</span>
+                        <span class="val">D2 (GPIO4)</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">INA219 I2C SCL:</span>
+                        <span class="val">D1 (GPIO5)</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">INA219 Address:</span>
+                        <span class="val">0x40 (I2C)</span>
+                    </div>
+                </div>
+
+                <div class="info-column">
+                    <h4>ESP8266 API Target URL</h4>
+                    <p style="font-size: 0.76rem; color: var(--text-muted);">Change this when connected to router/hotspot:</p>
+                    <div class="url-editor-form">
+                        <input type="text" id="apiUrlInput" value="http://192.168.4.1" placeholder="e.g. http://172.18.240.57">
+                        <button id="btnSaveApiUrl" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Set IP</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 9. COLLEGE VIVA TECHNICAL CALLOUT -->
+            <section class="card-viva-notice">
+                <strong>Project Defense / Viva Note:</strong> The INA219 sensor in this prototype measures <strong>DC electrical load (up to 26V / 3.2A)</strong> across a precision shunt resistor. For prototype demonstrations, a low-voltage DC light / LED load is safely energized via the Relay. In a full industrial deployment measuring 230V AC mains energy, an isolated non-invasive Current Transformer (CT) sensor or PZEM-004T module with galvanic optocoupler isolation is required for electrical safety.
+            </section>
+
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="dashboard-footer">
+            <div class="footer-tagline">IOT BASED LIGHT CONTROLLING AND ENERGY MEASURING SYSTEM</div>
+            <div>ESP8266 NodeMCU ESP-12E &bull; Relay Module (D5) &bull; INA219 I2C Sensor (D1/D2) &bull; College Engineering Capstone</div>
+        </footer>
+
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toastNotification" class="toast-notification">Notification Message</div>
+
+    <!-- SCRIPTS -->
+    <script src="js/config.js"></script>
+    <script src="js/mockData.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/chart.js"></script>
+    <script src="js/qr.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
